@@ -1,0 +1,5 @@
+{
+  "name": "Nhận xét Tin học & Công nghệ  TT27  Thầy. Võ Châu Thanh(V1.3)",
+  "description": "An application for primary school teachers to generate student feedback for Informatics and Technology subjects, based on Vietnam's Circular 27. It supports both single and bulk generation with customizable options.",
+  "requestFramePermissions": []
+}
