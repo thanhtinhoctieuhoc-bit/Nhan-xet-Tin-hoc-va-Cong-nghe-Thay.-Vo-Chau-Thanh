@@ -1,86 +1,43 @@
+// App.tsx (ví dụ tối giản để bạn lắp vào chỗ xử lý submit)
+import { useState } from 'react'
+import { generateServer } from './services/api'
 
-import React, { useState } from 'react';
-import type { BulkOutput, FeedbackLength } from './types';
-import { generateBulkFeedback } from './services/geminiService';
-import Header from './components/Header';
-import ListForm from './components/ListForm';
-import BulkForm from './components/BulkForm';
-import ResultDisplay from './components/ResultDisplay';
-import Spinner from './components/Spinner';
+export default function App() {
+  const [prompt, setPrompt] = useState('')
+  const [answer, setAnswer] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-type View = 'list' | 'csv';
-
-const App: React.FC = () => {
-  const [view, setView] = useState<View>('list');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [bulkResult, setBulkResult] = useState<BulkOutput | null>(null);
-
-  const handleBulkGenerate = async (csvData: string, feedbackLength: FeedbackLength) => {
-    setIsLoading(true);
-    setError(null);
-    setBulkResult(null);
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true); setError(null); setAnswer('')
     try {
-      const result = await generateBulkFeedback(csvData, feedbackLength);
-      setBulkResult(result);
-    } catch (e) {
-      setError(e instanceof Error ? `Lỗi: ${e.message}` : 'Đã xảy ra lỗi không xác định. Vui lòng kiểm tra định dạng dữ liệu và thử lại.');
+      const text = await generateServer(prompt) // gọi backend thay vì gọi thẳng Gemini
+      setAnswer(text)
+    } catch (err:any) {
+      setError(err.message || 'Lỗi gọi API')
     } finally {
-      setIsLoading(false);
+      setLoading(false)
     }
-  };
-
-  const activeTabClass = "bg-white text-sky-700 shadow-sm";
-  const inactiveTabClass = "bg-transparent text-gray-500 hover:text-gray-800";
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-      <Header />
-      <main className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-200">
-            <div className="mb-6">
-              <div className="bg-gray-100 p-1 rounded-lg inline-flex">
-                <button
-                  onClick={() => setView('list')}
-                  className={`px-5 py-2 text-sm font-semibold rounded-md transition-all duration-300 ${view === 'list' ? activeTabClass : inactiveTabClass}`}
-                  aria-pressed={view === 'list'}
-                >
-                  Nhận xét theo Danh sách
-                </button>
-                <button
-                  onClick={() => setView('csv')}
-                  className={`px-5 py-2 text-sm font-semibold rounded-md transition-all duration-300 ${view === 'csv' ? activeTabClass : inactiveTabClass}`}
-                  aria-pressed={view === 'csv'}
-                >
-                  Nhận xét Hàng loạt (CSV)
-                </button>
-              </div>
-            </div>
-            {view === 'list' ? (
-              <ListForm onGenerate={handleBulkGenerate} isLoading={isLoading} />
-            ) : (
-              <BulkForm onGenerate={handleBulkGenerate} isLoading={isLoading} />
-            )}
+    <div style={{ maxWidth: 720, margin: '40px auto', fontFamily: 'system-ui, Arial' }}>
+      <h1>Nhận xét Tin học & Công nghệ</h1>
+      <form onSubmit={onSubmit}>
+        <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={5} style={{width:'100%'}} />
+        <br />
+        <button type="submit" disabled={loading}>{loading ? 'Đang tạo...' : 'Tạo nhận xét'}</button>
+      </form>
+      {error && <p style={{color:'crimson'}}>Lỗi: {error}</p>}
+      {answer && (
+        <>
+          <h3>Kết quả</h3>
+          <div style={{whiteSpace:'pre-wrap', background:'#f5f5f5', padding:12, borderRadius:8}}>
+            {answer}
           </div>
-          <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-200">
-            <h2 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-200 pb-3">Kết quả Nhận xét</h2>
-            {isLoading ? (
-              <div className="flex justify-center items-center h-full min-h-[300px]">
-                <Spinner />
-              </div>
-            ) : (
-              <ResultDisplay error={error} bulkResult={bulkResult} />
-            )}
-          </div>
-        </div>
-        <footer className="text-center text-slate-500 mt-12 text-sm">
-          <p>Phát triển bởi Thầy. Võ Châu Thanh</p>
-          <p>Ứng dụng tuân thủ Thông tư 27/2020/TT-BGDĐT</p>
-        </footer>
-      </main>
+        </>
+      )}
     </div>
-  );
-};
-
-export default App;
+  )
+}
